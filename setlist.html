@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setlist #1</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── LAYOUT ── */
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #1a1a1a;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 200px;
+    min-width: 200px;
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #2a2a2a;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 16px 14px 10px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .sidebar-header .setlist-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .sidebar-header .setlist-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #eee;
+    margin-top: 2px;
+  }
+
+  .song-list {
+    padding: 8px 0;
+    flex: 1;
+  }
+
+  .song-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .song-item:hover {
+    background: #1e1e1e;
+  }
+  .song-item.active {
+    background: #1e1e1e;
+    border-left-color: #922b21;
+  }
+  .song-num {
+    font-size: 9px;
+    color: #444;
+    font-weight: 600;
+    min-width: 14px;
+    padding-top: 1px;
+  }
+  .song-info { flex: 1; min-width: 0; }
+  .song-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ccc;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-item.active .song-name { color: #fff; }
+  .song-artist {
+    font-size: 9px;
+    color: #555;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #e8e4dc;
+  }
+
+  /* ── TOPBAR ── */
+  #topbar {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 9px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+  }
+  #topbar .current-song {
+    font-size: 13px;
+    font-weight: 700;
+    color: #111;
+  }
+  #topbar .current-artist {
+    font-size: 11px;
+    color: #888;
+    margin-left: 8px;
+  }
+  #btn-pdf {
+    background: #922b21;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s;
+  }
+  #btn-pdf:hover { background: #7b2419; }
+  #btn-pdf svg { width: 13px; height: 13px; }
+
+  /* ── SHEET AREA ── */
+  #sheet-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px 20px;
+    display: flex;
+    justify-content: center;
+  }
+
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    gap: 10px;
+  }
+  #empty-state svg { opacity: 0.3; }
+  #empty-state p { font-size: 13px; }
+
+  /* ── SONG SHEET (same style as Night Nurse HTML) ── */
+  .page {
+    background: #ffffff;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 18mm 18mm 14mm 18mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  }
+
+  .song-title  { font-size: 32px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1; }
+  .song-artist-h { font-size: 14px; color: #666; margin-top: 5px; }
+  .song-meta   { font-size: 8.5px; color: #aaa; margin-top: 4px; letter-spacing: 0.3px; }
+  .divider     { border: none; border-top: 1px solid #bbb; margin: 5mm 0; }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 3mm;
+  }
+  .col {
+    border-right: 1px solid #e0e0e0;
+    padding-right: 3mm;
+  }
+  .col:last-child { border-right: none; padding-right: 0; padding-left: 1mm; }
+
+  .section {
+    display: inline-block;
+    background: #922b21;
+    color: #fff;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 7px;
+    margin-top: 4px;
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    margin-bottom: 7px;
+    line-height: 1;
+  }
+  .cg {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ch {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1a5276;
+    line-height: 1;
+    min-height: 15px;
+    white-space: pre;
+    padding-right: 3px;
+  }
+  .lw {
+    font-size: 13px;
+    font-weight: 800;
+    color: #111;
+    white-space: pre;
+    line-height: 1.25;
+  }
+  .spacer { height: 10px; }
+
+  /* ── BACKING VOCAL / PAREN LINES ── */
+  .line.paren .lw {
+    font-style: italic;
+    font-weight: 600;
+    color: #666;
+    font-size: 11px;
+  }
+  .line.paren .ch {
+    color: #6b8cae;
+  }
+
+  /* ── SOLO INDICATOR ── */
+  .section.solo {
+    background: #1a5276;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; display: block; height: auto; }
+    #sidebar, #topbar { display: none !important; }
+    #main { background: white; display: block; }
+    #sheet-area { padding: 0; overflow: visible; display: block; }
+    .page { box-shadow: none; width: 100%; min-height: auto; }
+    @page { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="setlist-label">Setlist</div>
+    <div class="setlist-name">#1</div>
+  </div>
+  <div class="song-list" id="song-list">
+    <!-- items injected by JS -->
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div>
+      <span class="current-song" id="topbar-title">Selecione uma música</span>
+      <span class="current-artist" id="topbar-artist"></span>
+    </div>
+    <button id="btn-pdf" onclick="window.print()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M4 1h8v4H4zM2 5h12v7H2zM5 12v3h6v-3"/>
+        <circle cx="12" cy="8" r="0.8" fill="currentColor" stroke="none"/>
+      </svg>
+      Baixar PDF
+    </button>
+  </div>
+
+  <!-- SHEET AREA -->
+  <div id="sheet-area">
+    <div id="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <path d="M9 12h6M9 16h4"/>
+      </svg>
+      <p>Escolha uma música na barra lateral</p>
+    </div>
+    <div id="sheet-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SONG DATA
+// ═══════════════════════════════════════════════
+const SONGS = [
+
+  // ── 9 ──────────────────────────────────────
+  {
+    id: "night-nurse",
+    num: 9,
+    title: "Night Nurse",
+    artist: "Gregory Isaacs",
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 76  |  Comp.: Gregory Isaacs & Sylvester Weise",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Verso 1" },
+        { line: [["Am","Tell her try her best just to "],["G","make it quick"]] },
+        { line: [["Am","Woman tend to "],["G","the sick"]] },
+        { line: [["Am","Because there must be something "],["G","she can do"]] },
+        { line: [["Am","This heart is "],["G","broken in two"]] },
+        { spacer: true },
+        { line: [["Am","Tell her it's a case of "],["G","emergency"]] },
+        { line: [["Am","There's a patient by the "],["G","name of Gregory"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Only you alone can quench this "],["G","here thirst"]] },
+        { line: [["Am","My night "],["G","nurse, Oh God"]] },
+        { line: [["Am","Oh the pain is "],["G","getting worse"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["Am","I don't wanna "],["G","see no Doc"]] },
+        { line: [["Am","I need attendance from my nurse a"],["G","round the clock"]] },
+        { line: [["Am","Because there's no prescription "],["G","for me"]] },
+        { line: [["Am","She's the one, the only "],["G","remedy"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Only you alone can quench this "],["G","here thirst"]] },
+        { line: [["Am","My night "],["G","nurse, Oh God"]] },
+        { line: [["Am","Oh the pain is "],["G","getting worse"]] },
+        { spacer: true },
+        { section: "Ponte" },
+        { line: [["Am","I'm hurt "],["G","my love"]] },
+        { line: [["Am","And I'm "],["G","sure"]] },
+        { line: [["Am","No doctor "],["G","can cure"]] },
+        { spacer: true },
+        { section: "Outro — repetir e diminuir" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Oh "],["G","God"]] },
+      ]
+    ]
+  },
+
+  // ── 10 ─────────────────────────────────────
+  {
+    id: "truths-and-rights",
+    num: 10,
+    title: "Truths and Rights",
+    artist: "Johnny Osbourne",
+    meta: "Tom: Abm  |  Ritmo: Reggae  |  BPM: 160  |  Comp.: Johnny Osbourne",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["Dbm","· · · "],["E","· · · "],["Ab","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Dbm","Render your hearts "],["E","and not your "],["Ab","garments"]] },
+        { line: [["Dbm","The truth is there "],["E","for who have "],["Ab","eyes to see"]] },
+        { line: [["Dbm","Partiality has "],["E","no place in "],["Ab","this Judgement"]] },
+        { line: [["Dbm","Remember "],["E","the words "],["Ab","of prophecy"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Ab","Children run, come to "],["Dbm","truths and rights"]] },
+        { line: [["","(That's what I'm about)"]], paren: true },
+        { line: [["Ab","You know the "],["Dbm","truths and rights"]] },
+        { line: [["Fm","Teach it to "],["Abm","the children"]] },
+        { line: [["","'Cause they should know"]], paren: true },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["Dbm","Children say "],["E","a little "],["Ab","prayer"]] },
+        { line: [["Dbm","Every night before "],["E","you go "],["Ab","to sleep"]] },
+        { line: [["Dbm","'Cause tomorrow is "],["E","promised "],["Ab","to no-one"]] },
+        { line: [["Dbm","When you think it's "],["E","peace and "],["Ab","safety"]] },
+        { line: [["Dbm","Lord, it could be "],["E","sudden "],["Ab","destruction"]] },
+        { line: [["","('Cause we know, yes we know)"]], paren: true },
+        { spacer: true },
+        { section: "Ponte" },
+        { line: [["Dbm","Remember these few "],["E","words "],["Ab","to you"]] },
+        { line: [["Dbm","And for tomorrow "],["Ab","and henceforth I say"]] },
+        { line: [["Dbm","Render your hearts "],["E","and not your "],["Ab","garments"]] },
+        { line: [["Dbm","The truth is there "],["E","for who have "],["Ab","eyes to see"]] },
+        { line: [["Dbm","Partiality has "],["E","no place in "],["Ab","this Judgement"]] },
+        { line: [["Dbm","Remember "],["E","the words "],["Ab","of prophecy"]] },
+        { spacer: true },
+        { section: "Outro Refrão — repetir (fade)" },
+        { line: [["Ab","Children run, come to "],["Dbm","truths and rights"]] },
+        { line: [["Fm","Teach it to "],["Abm","the children"]] },
+      ]
+    ]
+  },
+
+  // ── 12 ─────────────────────────────────────
+  {
+    id: "badfish",
+    num: 12,
+    title: "Badfish",
+    artist: "Sublime",
+    meta: "Tom: A  |  Ritmo: Reggae/Rock  |  BPM: 94  |  Comp.: Bradley Nowell",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["A","· · · "],["Bm","· · · "],["G","· · · "],["A","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["A","When you grab a hold of "],["Bm","me"]] },
+        { line: [["G","Tell me that I'll never "],["A","be set free"]] },
+        { line: [["A","Well, I'm a para-"],["Bm","site"]] },
+        { line: [["G","Creep and crawl, I step into "],["A","the night"]] },
+        { line: [["A","Two pints of "],["D","booze"]] },
+        { line: [["G","Tell me are you a bad fish "],["A","too?"]] },
+        { line: [["","(are you a bad fish too?)"]], paren: true },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["D","Ain't got no money "],["A","to spend"]] },
+        { line: [["D","I hope the night will "],["A","never end"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["A","Baby, you're a "],["Bm","big blue whale"]] },
+        { line: [["G","Grab the reef when all "],["A","duck diving fails"]] },
+        { line: [["A","I'd swim but I wish "],["Bm","I never learned"]] },
+        { line: [["G","Water's too polluted "],["A","with germs"]] },
+        { line: [["A","I dive deep when it's "],["D","ten feet overhead"]] },
+        { line: [["G","Grab the reef underneath "],["A","my bed"]] },
+        { line: [["","(underneath my bed)"]], paren: true },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["D","Ain't got no quarrels "],["A","with God"]] },
+        { line: [["D","Ain't got no time "],["A","to grow old"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+        { spacer: true },
+        { section: "Solo", solo: true },
+        { line: [["A","· · · "],["Bm","· · · "],["G","· · · "],["A","· · ·"]] },
+        { spacer: true },
+        { line: [["D","Ain't got no quarrels "],["A","with God"]] },
+        { line: [["D","Ain't got no time "],["A","to grow old"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+      ]
+    ]
+  },
+
+  // ── 13 ─────────────────────────────────────
+  {
+    id: "caution",
+    num: 13,
+    title: "Caution",
+    artist: "Aswad",
+    meta: "Tom: Gm  |  Ritmo: Reggae  |  BPM: 113  |  Orig.: Bob Marley (1970)",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x4" },
+        { line: [["Gm","· · · "],["Dm","· · · "],["Cm","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Gm","Here I am "],["Dm","walking "],["Cm","down the "],["Gm","street"]] },
+        { line: [["Dm","Walking, walking, walking, walking, "],["Cm","walking"]], paren: true },
+        { line: [["Gm","And the children, every-"],["Dm","thing "],["Cm","is so "],["Gm","sweet"]] },
+        { line: [["Dm","Wo-wo-wo sweet, "],["Cm","wo-wo-wo sweet"]], paren: true },
+        { spacer: true },
+        { line: [["Gm","I'm doin' "],["Dm","my best"]] },
+        { line: [["Cm","And I'm doin' it "],["Gm","slow"]] },
+        { line: [["Gm","But there is "],["Dm","just one thing"]] },
+        { line: [["Cm","I would like you "],["Gm","to know"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["F","Ooh, when you wet it's "],["Gm","slippery, yeah"]] },
+        { line: [["Eb","When it damp "],["Bb","it crampin'!"]] },
+        { line: [["F","If it's slidin' you will "],["Gm","tumble down"]] },
+        { line: [["Eb","Won't want you "],["Bb","on the ground"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Refrão" },
+        { line: [["Dm","Caution; the "],["Gm","road is wet"]] },
+        { line: [["Dm","Black soul is "],["Gm","black as jet"]] },
+        { line: [["Dm","Caution; the "],["Gm","road is hot"]] },
+        { line: [["Dm","You got to do "],["Gm","better than that"]] },
+        { spacer: true },
+        { section: "Bridge 2" },
+        { line: [["F","'Cos when you wet it's "],["Gm","slippery, yeah"]] },
+        { line: [["Eb","When it damp "],["Bb","it crampin'!"]] },
+        { line: [["F","If it's slidin' up and "],["Gm","down"]] },
+        { line: [["Eb","Don't want you on the "],["Bb","ground, brother!"]] },
+        { spacer: true },
+        { section: "Break" },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { spacer: true },
+        { section: "Refrão Final" },
+        { line: [["Dm","Caution; the "],["Gm","road is wet"]] },
+        { line: [["Dm","Black soul is "],["Gm","black as jet"]] },
+        { line: [["Dm","Caution; the "],["Gm","road is hot"]] },
+        { line: [["Dm","You got to do "],["Gm","better than that"]] },
+      ]
+    ]
+  },
+
+  // ── 15 ─────────────────────────────────────
+  {
+    id: "1865",
+    num: 15,
+    title: "1865 (96° In The Shade)",
+    artist: "Third World",
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 132  |  Comp.: Michael Cooper & Cat Coore",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Refrão" },
+        { line: [["C","96 "],["G","degrees"]] },
+        { line: [["Am","in the shade"]] },
+        { line: [["C","real "],["G","hot"]] },
+        { line: [["Am","in the shade"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["","Said it was "],["Am","96 degrees in the "],["G","shade"]] },
+        { line: [["Am","Ten thousand soldiers on "],["G","parade"]] },
+        { line: [["Am","Taking I and I to meet a big fat "],["G","boy"]] },
+        { line: [["Am","Sent from overseas"]] },
+        { line: [["G","The queen employ"]] },
+        { spacer: true },
+        { line: [["Am","Excellency before you I come"]] },
+        { line: [["G","With my representation"]] },
+        { line: [["Am","You know where I'm coming "],["G","from"]] },
+        { spacer: true },
+        { line: [["Am","You caught me on the loose"]] },
+        { line: [["","Fighting to be free"]] },
+        { line: [["G","Now you show me a noose"]] },
+        { line: [["","On the cotton tree"]] },
+        { spacer: true },
+        { line: [["Am","Entertainment for you"]] },
+        { line: [["G","Martyrdom "],["E","for me"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Refrão" },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Am","Some may suffer "],["G","and some may burn"]] },
+        { line: [["Am","But I know that one day "],["G","my people will learn"]] },
+        { line: [["Am","As sure as the sun shines "],["G","way up in the sky"]] },
+        { line: [["Am","Today I stand here a victim "],["G","the truth is I'll never die"]] },
+        { spacer: true },
+        { section: "Refrão Final — repetir" },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+      ]
+    ]
+  },
+
+];
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+
+function buildSidebar() {
+  const list = document.getElementById('song-list');
+  SONGS.forEach((song, i) => {
+    const item = document.createElement('div');
+    item.className = 'song-item';
+    item.dataset.id = song.id;
+    item.innerHTML = `
+      <span class="song-num">${String(song.num || i+1).padStart(2,'0')}</span>
+      <div class="song-info">
+        <div class="song-name">${song.title}</div>
+        <div class="song-artist">${song.artist}</div>
+      </div>`;
+    item.addEventListener('click', () => loadSong(song.id));
+    list.appendChild(item);
+  });
+}
+
+function buildBlock(block) {
+  if (block.section) {
+    const cls = block.solo ? ' solo' : '';
+    return `<div class="section${cls}">${block.section}</div>`;
+  }
+  if (block.spacer) {
+    return `<div class="spacer"></div>`;
+  }
+  if (block.line) {
+    const cls = block.paren ? ' paren' : '';
+    const segs = block.line.map(([ch, lw]) =>
+      `<span class="cg"><span class="ch">${ch}</span><span class="lw">${lw}</span></span>`
+    ).join('');
+    return `<div class="line${cls}">${segs}</div>`;
+  }
+  return '';
+}
+
+function buildSheet(song) {
+  const col1 = song.cols[0].map(buildBlock).join('\n');
+  const col2 = song.cols[1].map(buildBlock).join('\n');
+
+  return `
+    <div class="page">
+      <div style="margin-bottom:6mm">
+        <div class="song-title">${song.title}</div>
+        <div class="song-artist-h">${song.artist}</div>
+        <div class="song-meta">${song.meta}</div>
+      </div>
+      <hr class="divider">
+      <div class="columns">
+        <div class="col">${col1}</div>
+        <div class="col">${col2}</div>
+      </div>
+    </div>`;
+}
+
+function loadSong(id) {
+  const song = SONGS.find(s => s.id === id);
+  if (!song) return;
+
+  // sidebar highlight
+  document.querySelectorAll('.song-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.song-item[data-id="${id}"]`).classList.add('active');
+
+  // topbar
+  document.getElementById('topbar-title').textContent = song.title;
+  document.getElementById('topbar-artist').textContent = song.artist;
+
+  // sheet
+  const content = document.getElementById('sheet-content');
+  content.innerHTML = buildSheet(song);
+  content.style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+
+  // scroll to top
+  document.getElementById('sheet-area').scrollTop = 0;
+}
+
+// init
+buildSidebar();
+
+// auto-load first song
+if (SONGS.length > 0) loadSong(SONGS[0].id);
+</script>
+</body>
+</html>
