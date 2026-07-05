@@ -247,6 +247,79 @@
     background: #1a5276;
   }
 
+  /* ── MOBILE ── */
+  #mobile-fab, #drawer-overlay, #mobile-drawer { display: none; }
+
+  @media (max-width: 768px) {
+    #sidebar { display: none; }
+    #sheet-area { padding: 16px 8px 90px; }
+
+    #mobile-fab {
+      display: flex;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #922b21;
+      color: #fff;
+      border: none;
+      border-radius: 28px;
+      padding: 14px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    #drawer-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    #drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+    #mobile-drawer {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #111;
+      border-radius: 16px 16px 0 0;
+      z-index: 300;
+      max-height: 75vh;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    #mobile-drawer.open { transform: translateY(0); }
+
+    .drawer-handle {
+      width: 36px; height: 4px;
+      background: #333; border-radius: 2px;
+      margin: 12px auto 6px; flex-shrink: 0;
+    }
+    .drawer-header {
+      padding: 6px 16px 12px;
+      border-bottom: 1px solid #222;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .drawer-title { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+    .drawer-close { background: none; border: none; color: #555; font-size: 24px; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .drawer-songs { overflow-y: auto; padding: 6px 0 32px; flex: 1; }
+    #mobile-drawer .song-item { padding: 10px 16px; }
+    #mobile-drawer .song-name { font-size: 13px; }
+    #mobile-drawer .song-artist { font-size: 10px; }
+  }
+
   /* ── PRINT ── */
   @media print {
     body { background: white; display: block; height: auto; }
@@ -297,11 +370,23 @@
         <rect x="9" y="3" width="6" height="4" rx="1"/>
         <path d="M9 12h6M9 16h4"/>
       </svg>
-      <p>Escolha uma música na barra lateral</p>
+      <p>Escolha uma música</p>
     </div>
     <div id="sheet-content" style="display:none"></div>
   </div>
 
+</div>
+
+<!-- ═══ MOBILE DRAWER ═══ -->
+<button id="mobile-fab" onclick="openDrawer()">♪ Lista</button>
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="mobile-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-header">
+    <span class="drawer-title">Setlist #1</span>
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-songs" id="drawer-songs"></div>
 </div>
 
 <script>
@@ -729,6 +814,79 @@ const SONGS = [
     ]
   },
 
+  // ── 16 ─────────────────────────────────────
+  {
+    id: "pet-sematary",
+    num: 16,
+    title: "Pet Sematary",
+    artist: "Ramones",
+    lyricsSize: 13,
+    meta: "Tom: Dm  |  Ritmo: Punk Rock  |  BPM: ~128  |  Comp.: Dee Dee Ramone",
+    cols: [
+      // COLUNA 1: Verso 1 + Refrão 1 + Verso 2 + Refrão 2
+      [
+        { section: "Verso 1" },
+        { line: [["Dm","Under the arc of "],["C","a weather "],["F","stain boards,"]] },
+        { line: [["Dm","Ancient goblins, "],["C","and "],["F","warlords,"]] },
+        { line: [["Dm","Come out of the ground, "],["C","not making "],["F","a sound,"]] },
+        { line: [["Dm","The smell of death "],["C","is all "],["F","around,"]] },
+        { line: [["C","And the night when "],["Dm","the cold wind blows,"]] },
+        { line: [["C","No one cares, "],["Dm","nobody "],["Bb","knows."]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Dm","Follow Victor to "],["C","the sacred "],["F","place,"]] },
+        { line: [["Dm","This ain't a dream, "],["C","I can't "],["F","escape,"]] },
+        { line: [["Dm","Molars and fangs, "],["C","the clicking "],["F","of bones,"]] },
+        { line: [["Dm","Spirits moaning "],["C","among the "],["F","tombstones,"]] },
+        { line: [["C","And the night, when "],["Dm","the moon is bright,"]] },
+        { line: [["C","Someone cries, "],["Dm","something "],["Bb","ain't right."]] },
+        { spacer: true },
+        { section: "Refrão 2" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+      ],
+      // COLUNA 2: Solo + Verso 3 + Refrão 3 + Outro
+      [
+        { section: "Solo — guitarra", solo: true },
+        { spacer: true },
+        { section: "Verso 3" },
+        { line: [["Dm","The moon is full, "],["C","the air "],["F","is still,"]] },
+        { line: [["Dm","All of a sudden "],["C","I feel "],["F","a chill,"]] },
+        { line: [["Dm","Victor is grinning, "],["C","flesh rotting "],["F","away,"]] },
+        { line: [["Dm","Skeletons dance, "],["C","I curse "],["F","this day,"]] },
+        { line: [["C","And the night when "],["Dm","the wolves cry out,"]] },
+        { line: [["C","Listen close and "],["Dm","you can hear "],["Bb","me shout."]] },
+        { spacer: true },
+        { section: "Refrão 3" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+        { spacer: true },
+        { section: "Outro" },
+        { line: [["Dm","oh, no "],["C","oh, no"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","not again,"]] },
+        { line: [["Dm","Oh, no "],["C","oooh"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","not again."]] },
+        { line: [["Dm","oh, no no no "],["F","(Fade out)"]] },
+      ]
+    ]
+  },
+
 ];
 
 // ═══════════════════════════════════════════════
@@ -737,19 +895,31 @@ const SONGS = [
 
 function buildSidebar() {
   const list = document.getElementById('song-list');
+  const drawer = document.getElementById('drawer-songs');
   SONGS.forEach((song, i) => {
-    const item = document.createElement('div');
-    item.className = 'song-item';
-    item.dataset.id = song.id;
-    item.innerHTML = `
-      <span class="song-num">${String(song.num || i+1).padStart(2,'0')}</span>
-      <div class="song-info">
-        <div class="song-name">${song.title}</div>
-        <div class="song-artist">${song.artist}</div>
-      </div>`;
-    item.addEventListener('click', () => loadSong(song.id));
-    list.appendChild(item);
+    [list, drawer].forEach(container => {
+      const item = document.createElement('div');
+      item.className = 'song-item';
+      item.dataset.id = song.id;
+      item.innerHTML = `
+        <span class="song-num">${String(song.num || i+1).padStart(2,'0')}</span>
+        <div class="song-info">
+          <div class="song-name">${song.title}</div>
+          <div class="song-artist">${song.artist}</div>
+        </div>`;
+      item.addEventListener('click', () => loadSong(song.id));
+      container.appendChild(item);
+    });
   });
+}
+
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('mobile-drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('mobile-drawer').classList.remove('open');
 }
 
 function buildBlock(block) {
@@ -796,6 +966,7 @@ function buildSheet(song) {
 }
 
 function loadSong(id) {
+  closeDrawer();
   const song = SONGS.find(s => s.id === id);
   if (!song) return;
 
