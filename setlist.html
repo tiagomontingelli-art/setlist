@@ -166,7 +166,7 @@
     background: #ffffff;
     width: 210mm;
     min-height: 297mm;
-    padding: 18mm 18mm 14mm 18mm;
+    padding: 13mm 14mm 10mm 14mm;
     box-shadow: 0 4px 24px rgba(0,0,0,0.18);
   }
 
@@ -196,15 +196,15 @@
     text-transform: uppercase;
     padding: 2px 6px;
     border-radius: 2px;
-    margin-bottom: 7px;
-    margin-top: 4px;
+    margin-bottom: 5px;
+    margin-top: 3px;
   }
 
   .line {
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-end;
-    margin-bottom: 7px;
+    margin-bottom: var(--line-gap, 6px);
     line-height: 1;
   }
   .cg {
@@ -214,29 +214,29 @@
   }
   .ch {
     font-family: 'Courier New', Courier, monospace;
-    font-size: 11px;
+    font-size: var(--ch-size, 11px);
     font-weight: 700;
     color: #1a5276;
     line-height: 1;
-    min-height: 15px;
+    min-height: var(--ch-min, 16px);
     white-space: pre;
     padding-right: 3px;
   }
   .lw {
-    font-size: 13px;
+    font-size: var(--lw-size, 14px);
     font-weight: 800;
     color: #111;
     white-space: pre;
     line-height: 1.25;
   }
-  .spacer { height: 10px; }
+  .spacer { height: 8px; }
 
   /* ── BACKING VOCAL / PAREN LINES ── */
   .line.paren .lw {
     font-style: italic;
     font-weight: 600;
     color: #666;
-    font-size: 11px;
+    font-size: calc(var(--lw-size, 14px) * 0.82);
   }
   .line.paren .ch {
     color: #6b8cae;
@@ -310,12 +310,83 @@
 // ═══════════════════════════════════════════════
 const SONGS = [
 
+  // ── 7 ──────────────────────────────────────
+  {
+    id: "rich-man-poor-man",
+    num: 7,
+    title: "Rich Man Poor Man",
+    artist: "The Gladiators",
+    lyricsSize: 15,
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 143  |  Comp.: Albert Griffiths",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["Am","· · · · "],["G","· · · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Am","The rich man poor man beggar man thief"]] },
+        { line: [["Am","Everyone claim that dem are the chief"]] },
+        { line: [["G","The rich man buy the poor man's life"]] },
+        { line: [["G","The poor man take away the beggar man's wife"]] },
+        { spacer: true },
+        { line: [["Am","Don't cry... my brothers"]] },
+        { line: [["Am","Don't cry... my sisters"]] },
+        { line: [["G","These tears won't change the situation"]] },
+        { line: [["G","It's just a form, a form of reaction"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["Am","If you step on fire, fire burn you"]] },
+        { line: [["Am","Play with puppy, puppy lick your mouth"]] },
+        { line: [["G","Stand up strong, know where you belong"]] },
+        { line: [["G","Say the weak ones now will soon become strong"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["C","Hey, everything will "],["Dm","soon be okay"]] },
+        { line: [["C","As soon as "],["Dm","the war is over"]] },
+        { line: [["C","Jah children will be "],["Dm","free to come over"]] },
+        { line: [["C","Singing and dancing, "],["Dm","ready to take over"]] },
+        { line: [["G","Have some faith, have a little faith"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Instrumental", solo: true },
+        { line: [["Am","· · · "],["Am","· · · "],["G","· · · "],["G","· · ·"]] },
+        { spacer: true },
+        { section: "Refrão — repetir" },
+        { line: [["C","Hey, everything will "],["Dm","soon be okay"]] },
+        { line: [["C","As soon as "],["Dm","the war is over"]] },
+        { line: [["C","Jah children will be "],["Dm","free to come over"]] },
+        { line: [["C","Singing and dancing, "],["Dm","ready to take over"]] },
+        { line: [["G","Have some faith, have a little faith"]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Am","The rich man poor man beggar man thief"]] },
+        { line: [["Am","Everyone claim that dem are the chief"]] },
+        { line: [["G","The rich man buy the poor man's life"]] },
+        { line: [["G","The poor man take away the beggar man's wife"]] },
+        { spacer: true },
+        { line: [["Am","Don't cry... my brothers"]] },
+        { line: [["Am","Don't cry... my sisters"]] },
+        { line: [["G","These tears won't change the situation"]] },
+        { line: [["G","It's just a form, a form of reaction"]] },
+        { spacer: true },
+        { section: "Bridge — repetir" },
+        { line: [["Am","If you step on fire, fire burn you"]] },
+        { line: [["Am","Play with puppy, puppy lick your mouth"]] },
+        { line: [["G","Stand up strong, know where you belong"]] },
+        { line: [["G","Say the weak ones now will soon become strong"]] },
+      ]
+    ]
+  },
+
   // ── 9 ──────────────────────────────────────
   {
     id: "night-nurse",
     num: 9,
     title: "Night Nurse",
     artist: "Gregory Isaacs",
+    lyricsSize: 14,
     meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 76  |  Comp.: Gregory Isaacs & Sylvester Weise",
     cols: [
       // COLUNA 1
@@ -368,6 +439,7 @@ const SONGS = [
     num: 10,
     title: "Truths and Rights",
     artist: "Johnny Osbourne",
+    lyricsSize: 14,
     meta: "Tom: Abm  |  Ritmo: Reggae  |  BPM: 160  |  Comp.: Johnny Osbourne",
     cols: [
       // COLUNA 1
@@ -419,6 +491,7 @@ const SONGS = [
     num: 12,
     title: "Badfish",
     artist: "Sublime",
+    lyricsSize: 14,
     meta: "Tom: A  |  Ritmo: Reggae/Rock  |  BPM: 94  |  Comp.: Bradley Nowell",
     cols: [
       // COLUNA 1
@@ -475,6 +548,7 @@ const SONGS = [
     num: 13,
     title: "Caution",
     artist: "Aswad",
+    lyricsSize: 15,
     meta: "Tom: Gm  |  Ritmo: Reggae  |  BPM: 113  |  Orig.: Bob Marley (1970)",
     cols: [
       // COLUNA 1
@@ -527,12 +601,81 @@ const SONGS = [
     ]
   },
 
+  // ── 14 ─────────────────────────────────────
+  {
+    id: "every-man",
+    num: 14,
+    title: "Every Man Has A Right",
+    artist: "Cultural Roots",
+    lyricsSize: 13,
+    meta: "Tom: Cm  |  Ritmo: Reggae  |  BPM: ~90  |  Comp.: Cultural Roots",
+    cols: [
+      // COLUNA 1: Refrão + Verso + Bridge + Solo
+      [
+        { section: "Refrão" },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Oh, why can't we all "],["Bb","live as one?"]] },
+        { line: [["Cm","Oh, why can't we all "],["Bb","live as one?"]] },
+        { spacer: true },
+        { section: "Verso" },
+        { line: [["Cm","Any man, any man "],["Bb","resent some man"]] },
+        { line: [["Cm","Because of his colour, "],["Bb","race, or creed"]] },
+        { line: [["Cm","Oh, we should never"]] },
+        { line: [["Bb","be respected, no way"]] },
+        { line: [["Cm","'Cause if I jook out your eyes,"]] },
+        { line: [["Bb","you feel it"]] },
+        { line: [["Cm","If you jook out my eyes, "],["Bb","me see it"]] },
+        { line: [["Cm","If I cut you, I blood "],["Bb","come"]] },
+        { line: [["Cm","And if you cut I, I'm sure it's"]] },
+        { line: [["Bb","not water, come a-blood"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["Cm","Every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","Oh, inna earth "],["Bb","· "]] },
+        { spacer: true },
+        { section: "Solo — teclado", solo: true },
+      ],
+      // COLUNA 2: Verso 3 + Verso 3 + Bridge 3 + Refrão 2
+      [
+        { section: "Verso 3" },
+        { line: [["Cm","Any man, any man "],["Bb","resent some man"]] },
+        { line: [["Cm","Because of his colour, "],["Bb","race, or creed"]] },
+        { line: [["Cm","Oh, we should never"]] },
+        { line: [["Bb","be respected, no way"]] },
+        { line: [["Cm","'Cause if I jook out your eyes,"]] },
+        { line: [["Bb","you feel it"]] },
+        { line: [["Cm","If you jook out my eyes, "],["Bb","me see it"]] },
+        { line: [["Cm","If I cut you, I blood "],["Bb","come"]] },
+        { line: [["Cm","And if you cut I, I'm sure it's"]] },
+        { line: [["Bb","not water, come a-blood"]] },
+        { spacer: true },
+        { section: "Bridge 3" },
+        { line: [["Cm","Every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","Oh, inna earth "],["Bb","· "]] },
+        { spacer: true },
+        { section: "Refrão 2" },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","So why can't we all "],["Bb","live as one?"]] },
+        { line: [["Cm","Why can't we all "],["Bb","live as one?"]] },
+      ]
+    ]
+  },
+
   // ── 15 ─────────────────────────────────────
   {
     id: "1865",
     num: 15,
     title: "1865 (96° In The Shade)",
     artist: "Third World",
+    lyricsSize: 15,
     meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 132  |  Comp.: Michael Cooper & Cat Coore",
     cols: [
       // COLUNA 1
@@ -574,7 +717,8 @@ const SONGS = [
         { line: [["Am","Some may suffer "],["G","and some may burn"]] },
         { line: [["Am","But I know that one day "],["G","my people will learn"]] },
         { line: [["Am","As sure as the sun shines "],["G","way up in the sky"]] },
-        { line: [["Am","Today I stand here a victim "],["G","the truth is I'll never die"]] },
+        { line: [["Am","Today I stand here a victim"]] },
+        { line: [["G","the truth is I'll never die"]] },
         { spacer: true },
         { section: "Refrão Final — repetir" },
         { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
@@ -627,12 +771,18 @@ function buildBlock(block) {
 }
 
 function buildSheet(song) {
+  const lw = song.lyricsSize || 14;
+  const ch = Math.round(lw * 0.79);
+  const chMin = Math.round(lw * 1.15);
+  const lineGap = lw >= 15 ? 5 : 6;
+  const pageStyle = `--lw-size:${lw}px;--ch-size:${ch}px;--ch-min:${chMin}px;--line-gap:${lineGap}px`;
+
   const col1 = song.cols[0].map(buildBlock).join('\n');
   const col2 = song.cols[1].map(buildBlock).join('\n');
 
   return `
-    <div class="page">
-      <div style="margin-bottom:6mm">
+    <div class="page" style="${pageStyle}">
+      <div style="margin-bottom:5mm">
         <div class="song-title">${song.title}</div>
         <div class="song-artist-h">${song.artist}</div>
         <div class="song-meta">${song.meta}</div>
