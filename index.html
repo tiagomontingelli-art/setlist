@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Setlist - Agora Vai</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* ── LAYOUT ── */
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background: #1a1a1a;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR (recolhível, abre no hover) ── */
+  #sidebar-zone {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 18px; z-index: 500;
+  }
+  /* aba/handle visível quando recolhida */
+  #sidebar-zone::after {
+    content: "\2630"; /* ☰ */
+    position: absolute; left: 3px; top: 16px;
+    color: #999; font-size: 14px; line-height: 1;
+    transition: opacity 0.2s; pointer-events: none;
+  }
+  #sidebar-zone:hover::after { opacity: 0; }
+
+  #sidebar {
+    position: absolute; top: 0; left: 0; bottom: 0;
+    width: 210px;
+    background: #111;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #2a2a2a;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transform: translateX(-210px);
+    transition: transform 0.25s ease;
+  }
+  #sidebar-zone:hover #sidebar {
+    transform: translateX(0);
+    box-shadow: 3px 0 18px rgba(0,0,0,0.45);
+  }
+
+  .sidebar-header {
+    padding: 16px 14px 10px;
+    border-bottom: 1px solid #2a2a2a;
+  }
+  .sidebar-header .setlist-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: #555;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .sidebar-header .setlist-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #eee;
+    margin-top: 2px;
+  }
+
+  .song-list {
+    padding: 8px 0;
+    flex: 1;
+  }
+
+  .song-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .song-item:hover {
+    background: #1e1e1e;
+  }
+  .song-item.active {
+    background: #1e1e1e;
+    border-left-color: #922b21;
+  }
+  .song-num {
+    font-size: 9px;
+    color: #444;
+    font-weight: 600;
+    min-width: 14px;
+    padding-top: 1px;
+  }
+  .song-info { flex: 1; min-width: 0; }
+  .song-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #ccc;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .song-item.active .song-name { color: #fff; }
+  .song-artist {
+    font-size: 9px;
+    color: #555;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── MAIN ── */
+  #main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #e8e4dc;
+  }
+
+  /* ── SHEET AREA ── */
+  #sheet-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 12px 12px 26px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #999;
+    gap: 10px;
+  }
+  #empty-state svg { opacity: 0.3; }
+  #empty-state p { font-size: 13px; }
+
+  /* ── SONG SHEET (same style as Night Nurse HTML) ── */
+  .page {
+    background: #ffffff;
+    width: 100%;
+    max-width: 1500px;
+    min-height: auto;
+    padding: 7mm 8mm 6mm 8mm;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  }
+
+  .song-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 3mm; }
+  .btn-pdf-inline {
+    background: #922b21; color: #fff; border: none; border-radius: 4px;
+    padding: 5px 11px; font-size: 10px; font-weight: 700; cursor: pointer;
+    letter-spacing: 0.3px; display: inline-flex; align-items: center; gap: 5px;
+    flex-shrink: 0; white-space: nowrap; margin-top: 2px;
+  }
+  .btn-pdf-inline:hover { background: #7b2419; }
+  .btn-pdf-inline svg { width: 11px; height: 11px; }
+
+  .song-title  { font-size: 25px; font-weight: 800; color: #111; letter-spacing: -0.5px; line-height: 1; }
+  .song-artist-h { font-size: 13px; color: #666; margin-top: 4px; }
+  .song-meta   { font-size: 8.5px; color: #aaa; margin-top: 4px; letter-spacing: 0.3px; }
+  .divider     { border: none; border-top: 1px solid #bbb; margin: 3mm 0; }
+
+  /* fluxo único → colunas automáticas (fit to page) */
+  .sheet-flow {
+    column-count: 3;
+    column-gap: 6mm;
+    column-rule: 1px solid #e0e0e0;
+  }
+  /* mantém o cabeçalho da seção junto da 1ª linha e não quebra uma linha no meio */
+  .sheet-flow .section { break-after: avoid; -webkit-column-break-after: avoid; }
+  .sheet-flow .line    { break-inside: avoid; -webkit-column-break-inside: avoid; }
+
+  @media (max-width: 1100px) {
+    .sheet-flow { column-count: 2; }
+  }
+
+  .section {
+    display: inline-block;
+    background: #922b21;
+    color: #fff;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 5px;
+    margin-top: 3px;
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    margin-bottom: var(--line-gap, 6px);
+    line-height: 1;
+  }
+  .cg {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ch {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: var(--ch-size, 11px);
+    font-weight: 700;
+    color: #1a5276;
+    line-height: 1;
+    min-height: var(--ch-min, 16px);
+    white-space: pre;
+    padding-right: 3px;
+  }
+  .lw {
+    font-size: var(--lw-size, 14px);
+    font-weight: 800;
+    color: #111;
+    white-space: pre;
+    line-height: 1.25;
+  }
+  .spacer { height: 8px; }
+
+  /* ── BACKING VOCAL / PAREN LINES ── */
+  .line.paren .lw {
+    font-style: italic;
+    font-weight: 600;
+    color: #666;
+    font-size: calc(var(--lw-size, 14px) * 0.82);
+  }
+  .line.paren .ch {
+    color: #6b8cae;
+  }
+
+  /* ── SOLO INDICATOR ── */
+  .section.solo {
+    background: #1a5276;
+  }
+
+  /* ── MOBILE ── */
+  #mobile-fab, #drawer-overlay, #mobile-drawer { display: none; }
+
+  @media (max-width: 768px) {
+    #sidebar-zone, #sidebar { display: none; }
+    #sheet-area { padding: 16px 8px 90px; }
+    .page { width: 100%; max-width: none; min-height: auto; padding: 6mm 4mm; box-shadow: none; }
+    .sheet-flow { column-count: 1; column-rule: none; }
+
+    #mobile-fab {
+      display: flex;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #922b21;
+      color: #fff;
+      border: none;
+      border-radius: 28px;
+      padding: 14px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+
+    #drawer-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+    #drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+    #mobile-drawer {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: #111;
+      border-radius: 16px 16px 0 0;
+      z-index: 300;
+      max-height: 75vh;
+      flex-direction: column;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    #mobile-drawer.open { transform: translateY(0); }
+
+    .drawer-handle {
+      width: 36px; height: 4px;
+      background: #333; border-radius: 2px;
+      margin: 12px auto 6px; flex-shrink: 0;
+    }
+    .drawer-header {
+      padding: 6px 16px 12px;
+      border-bottom: 1px solid #222;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .drawer-title { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 1.5px; text-transform: uppercase; }
+    .drawer-close { background: none; border: none; color: #555; font-size: 24px; cursor: pointer; line-height: 1; padding: 0 4px; }
+    .drawer-songs { overflow-y: auto; padding: 6px 0 32px; flex: 1; }
+    #mobile-drawer .song-item { padding: 10px 16px; }
+    #mobile-drawer .song-name { font-size: 13px; }
+    #mobile-drawer .song-artist { font-size: 10px; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; display: block; height: auto; }
+    #sidebar-zone, #sidebar, .btn-pdf-inline { display: none !important; }
+    #main { background: white; display: block; }
+    #sheet-area { padding: 0; overflow: visible; display: block; }
+    .page {
+      box-shadow: none; width: 100%; max-width: none; min-height: auto;
+      /* trava tamanhos do auto-fit para o PDF sair consistente */
+      --lw-size: 14px !important; --ch-size: 11px !important;
+      --ch-min: 16px !important; --line-gap: 6px !important;
+    }
+    .sheet-flow { column-count: 2; }
+    @page { margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR (recolhível) ═══ -->
+<div id="sidebar-zone">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="setlist-label">Setlist</div>
+      <div class="setlist-name">#1</div>
+    </div>
+    <div class="song-list" id="song-list">
+      <!-- items injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div id="main">
+
+  <!-- SHEET AREA -->
+  <div id="sheet-area">
+    <div id="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <path d="M9 12h6M9 16h4"/>
+      </svg>
+      <p>Escolha uma música</p>
+    </div>
+    <div id="sheet-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- ═══ MOBILE DRAWER ═══ -->
+<button id="mobile-fab" onclick="openDrawer()">♪ Lista</button>
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="mobile-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-header">
+    <span class="drawer-title">Setlist #1</span>
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+  </div>
+  <div class="drawer-songs" id="drawer-songs"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// SONG DATA
+// ═══════════════════════════════════════════════
+const SONGS = [
+
+  // ── 7 ──────────────────────────────────────
+  {
+    id: "rich-man-poor-man",
+    num: 7,
+    title: "Rich Man Poor Man",
+    artist: "The Gladiators",
+    lyricsSize: 15,
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 143  |  Comp.: Albert Griffiths",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["Am","· · · · "],["G","· · · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Am","The rich man poor man beggar man thief"]] },
+        { line: [["Am","Everyone claim that dem are the chief"]] },
+        { line: [["G","The rich man buy the poor man's life"]] },
+        { line: [["G","The poor man take away the beggar man's wife"]] },
+        { spacer: true },
+        { line: [["Am","Don't cry... my brothers"]] },
+        { line: [["Am","Don't cry... my sisters"]] },
+        { line: [["G","These tears won't change the situation"]] },
+        { line: [["G","It's just a form, a form of reaction"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["Am","If you step on fire, fire burn you"]] },
+        { line: [["Am","Play with puppy, puppy lick your mouth"]] },
+        { line: [["G","Stand up strong, know where you belong"]] },
+        { line: [["G","Say the weak ones now will soon become strong"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["C","Hey, everything will "],["Dm","soon be okay"]] },
+        { line: [["C","As soon as "],["Dm","the war is over"]] },
+        { line: [["C","Jah children will be "],["Dm","free to come over"]] },
+        { line: [["C","Singing and dancing, "],["Dm","ready to take over"]] },
+        { line: [["G","Have some faith, have a little faith"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Instrumental", solo: true },
+        { line: [["Am","· · · "],["Am","· · · "],["G","· · · "],["G","· · ·"]] },
+        { spacer: true },
+        { section: "Refrão — repetir" },
+        { line: [["C","Hey, everything will "],["Dm","soon be okay"]] },
+        { line: [["C","As soon as "],["Dm","the war is over"]] },
+        { line: [["C","Jah children will be "],["Dm","free to come over"]] },
+        { line: [["C","Singing and dancing, "],["Dm","ready to take over"]] },
+        { line: [["G","Have some faith, have a little faith"]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Am","The rich man poor man beggar man thief"]] },
+        { line: [["Am","Everyone claim that dem are the chief"]] },
+        { line: [["G","The rich man buy the poor man's life"]] },
+        { line: [["G","The poor man take away the beggar man's wife"]] },
+        { spacer: true },
+        { line: [["Am","Don't cry... my brothers"]] },
+        { line: [["Am","Don't cry... my sisters"]] },
+        { line: [["G","These tears won't change the situation"]] },
+        { line: [["G","It's just a form, a form of reaction"]] },
+        { spacer: true },
+        { section: "Bridge — repetir" },
+        { line: [["Am","If you step on fire, fire burn you"]] },
+        { line: [["Am","Play with puppy, puppy lick your mouth"]] },
+        { line: [["G","Stand up strong, know where you belong"]] },
+        { line: [["G","Say the weak ones now will soon become strong"]] },
+      ]
+    ]
+  },
+
+  // ── 9 ──────────────────────────────────────
+  {
+    id: "night-nurse",
+    num: 9,
+    title: "Night Nurse",
+    artist: "Gregory Isaacs",
+    lyricsSize: 14,
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 76  |  Comp.: Gregory Isaacs & Sylvester Weise",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Verso 1" },
+        { line: [["Am","Tell her try her best just to "],["G","make it quick"]] },
+        { line: [["Am","Woman tend to "],["G","the sick"]] },
+        { line: [["Am","Because there must be something "],["G","she can do"]] },
+        { line: [["Am","This heart is "],["G","broken in two"]] },
+        { spacer: true },
+        { line: [["Am","Tell her it's a case of "],["G","emergency"]] },
+        { line: [["Am","There's a patient by the "],["G","name of Gregory"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Only you alone can quench this "],["G","here thirst"]] },
+        { line: [["Am","My night "],["G","nurse, Oh God"]] },
+        { line: [["Am","Oh the pain is "],["G","getting worse"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["Am","I don't wanna "],["G","see no Doc"]] },
+        { line: [["Am","I need attendance from my nurse a"],["G","round the clock"]] },
+        { line: [["Am","Because there's no prescription "],["G","for me"]] },
+        { line: [["Am","She's the one, the only "],["G","remedy"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Only you alone can quench this "],["G","here thirst"]] },
+        { line: [["Am","My night "],["G","nurse, Oh God"]] },
+        { line: [["Am","Oh the pain is "],["G","getting worse"]] },
+        { spacer: true },
+        { section: "Ponte" },
+        { line: [["Am","I'm hurt "],["G","my love"]] },
+        { line: [["Am","And I'm "],["G","sure"]] },
+        { line: [["Am","No doctor "],["G","can cure"]] },
+        { spacer: true },
+        { section: "Outro — repetir e diminuir" },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Night "],["G","nurse"]] },
+        { line: [["Am","Oh "],["G","God"]] },
+      ]
+    ]
+  },
+
+  // ── 10 ─────────────────────────────────────
+  {
+    id: "truths-and-rights",
+    num: 10,
+    title: "Truths and Rights",
+    artist: "Johnny Osbourne",
+    lyricsSize: 14,
+    meta: "Tom: Abm  |  Ritmo: Reggae  |  BPM: 160  |  Comp.: Johnny Osbourne",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["Dbm","· · · "],["E","· · · "],["Ab","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Dbm","Render your hearts "],["E","and not your "],["Ab","garments"]] },
+        { line: [["Dbm","The truth is there "],["E","for who have "],["Ab","eyes to see"]] },
+        { line: [["Dbm","Partiality has "],["E","no place in "],["Ab","this Judgement"]] },
+        { line: [["Dbm","Remember "],["E","the words "],["Ab","of prophecy"]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Ab","Children run, come to "],["Dbm","truths and rights"]] },
+        { line: [["","(That's what I'm about)"]], paren: true },
+        { line: [["Ab","You know the "],["Dbm","truths and rights"]] },
+        { line: [["Fm","Teach it to "],["Abm","the children"]] },
+        { line: [["","'Cause they should know"]], paren: true },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["Dbm","Children say "],["E","a little "],["Ab","prayer"]] },
+        { line: [["Dbm","Every night before "],["E","you go "],["Ab","to sleep"]] },
+        { line: [["Dbm","'Cause tomorrow is "],["E","promised "],["Ab","to no-one"]] },
+        { line: [["Dbm","When you think it's "],["E","peace and "],["Ab","safety"]] },
+        { line: [["Dbm","Lord, it could be "],["E","sudden "],["Ab","destruction"]] },
+        { line: [["","('Cause we know, yes we know)"]], paren: true },
+        { spacer: true },
+        { section: "Ponte" },
+        { line: [["Dbm","Remember these few "],["E","words "],["Ab","to you"]] },
+        { line: [["Dbm","And for tomorrow "],["Ab","and henceforth I say"]] },
+        { line: [["Dbm","Render your hearts "],["E","and not your "],["Ab","garments"]] },
+        { line: [["Dbm","The truth is there "],["E","for who have "],["Ab","eyes to see"]] },
+        { line: [["Dbm","Partiality has "],["E","no place in "],["Ab","this Judgement"]] },
+        { line: [["Dbm","Remember "],["E","the words "],["Ab","of prophecy"]] },
+        { spacer: true },
+        { section: "Outro Refrão — repetir (fade)" },
+        { line: [["Ab","Children run, come to "],["Dbm","truths and rights"]] },
+        { line: [["Fm","Teach it to "],["Abm","the children"]] },
+      ]
+    ]
+  },
+
+  // ── 12 ─────────────────────────────────────
+  {
+    id: "badfish",
+    num: 12,
+    title: "Badfish",
+    artist: "Sublime",
+    lyricsSize: 14,
+    meta: "Tom: A  |  Ritmo: Reggae/Rock  |  BPM: 94  |  Comp.: Bradley Nowell",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x2" },
+        { line: [["A","· · · "],["Bm","· · · "],["G","· · · "],["A","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["A","When you grab a hold of "],["Bm","me"]] },
+        { line: [["G","Tell me that I'll never "],["A","be set free"]] },
+        { line: [["A","Well, I'm a para-"],["Bm","site"]] },
+        { line: [["G","Creep and crawl, I step into "],["A","the night"]] },
+        { line: [["A","Two pints of "],["D","booze"]] },
+        { line: [["G","Tell me are you a bad fish "],["A","too?"]] },
+        { line: [["","(are you a bad fish too?)"]], paren: true },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["D","Ain't got no money "],["A","to spend"]] },
+        { line: [["D","I hope the night will "],["A","never end"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Verso 2" },
+        { line: [["A","Baby, you're a "],["Bm","big blue whale"]] },
+        { line: [["G","Grab the reef when all "],["A","duck diving fails"]] },
+        { line: [["A","I'd swim but I wish "],["Bm","I never learned"]] },
+        { line: [["G","Water's too polluted "],["A","with germs"]] },
+        { line: [["A","I dive deep when it's "],["D","ten feet overhead"]] },
+        { line: [["G","Grab the reef underneath "],["A","my bed"]] },
+        { line: [["","(underneath my bed)"]], paren: true },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["D","Ain't got no quarrels "],["A","with God"]] },
+        { line: [["D","Ain't got no time "],["A","to grow old"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+        { spacer: true },
+        { section: "Solo", solo: true },
+        { line: [["A","· · · "],["Bm","· · · "],["G","· · · "],["A","· · ·"]] },
+        { spacer: true },
+        { line: [["D","Ain't got no quarrels "],["A","with God"]] },
+        { line: [["D","Ain't got no time "],["A","to grow old"]] },
+        { line: [["D","Lord knows I'm "],["A","weak"]] },
+        { line: [["D","Won't somebody get me "],["E","off of this reef"]] },
+      ]
+    ]
+  },
+
+  // ── 13 ─────────────────────────────────────
+  {
+    id: "caution",
+    num: 13,
+    title: "Caution",
+    artist: "Aswad",
+    lyricsSize: 15,
+    meta: "Tom: Gm  |  Ritmo: Reggae  |  BPM: 113  |  Orig.: Bob Marley (1970)",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Intro — x4" },
+        { line: [["Gm","· · · "],["Dm","· · · "],["Cm","· · ·"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["Gm","Here I am "],["Dm","walking "],["Cm","down the "],["Gm","street"]] },
+        { line: [["Dm","Walking, walking, walking, walking, "],["Cm","walking"]], paren: true },
+        { line: [["Gm","And the children, every-"],["Dm","thing "],["Cm","is so "],["Gm","sweet"]] },
+        { line: [["Dm","Wo-wo-wo sweet, "],["Cm","wo-wo-wo sweet"]], paren: true },
+        { spacer: true },
+        { line: [["Gm","I'm doin' "],["Dm","my best"]] },
+        { line: [["Cm","And I'm doin' it "],["Gm","slow"]] },
+        { line: [["Gm","But there is "],["Dm","just one thing"]] },
+        { line: [["Cm","I would like you "],["Gm","to know"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["F","Ooh, when you wet it's "],["Gm","slippery, yeah"]] },
+        { line: [["Eb","When it damp "],["Bb","it crampin'!"]] },
+        { line: [["F","If it's slidin' you will "],["Gm","tumble down"]] },
+        { line: [["Eb","Won't want you "],["Bb","on the ground"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Refrão" },
+        { line: [["Dm","Caution; the "],["Gm","road is wet"]] },
+        { line: [["Dm","Black soul is "],["Gm","black as jet"]] },
+        { line: [["Dm","Caution; the "],["Gm","road is hot"]] },
+        { line: [["Dm","You got to do "],["Gm","better than that"]] },
+        { spacer: true },
+        { section: "Bridge 2" },
+        { line: [["F","'Cos when you wet it's "],["Gm","slippery, yeah"]] },
+        { line: [["Eb","When it damp "],["Bb","it crampin'!"]] },
+        { line: [["F","If it's slidin' up and "],["Gm","down"]] },
+        { line: [["Eb","Don't want you on the "],["Bb","ground, brother!"]] },
+        { spacer: true },
+        { section: "Break" },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { line: [["Gm","Hit me from the top, you "],["Dm","crazy mutha-"],["Cm","funker"]] },
+        { spacer: true },
+        { section: "Refrão Final" },
+        { line: [["Dm","Caution; the "],["Gm","road is wet"]] },
+        { line: [["Dm","Black soul is "],["Gm","black as jet"]] },
+        { line: [["Dm","Caution; the "],["Gm","road is hot"]] },
+        { line: [["Dm","You got to do "],["Gm","better than that"]] },
+      ]
+    ]
+  },
+
+  // ── 14 ─────────────────────────────────────
+  {
+    id: "every-man",
+    num: 14,
+    title: "Every Man Has A Right",
+    artist: "Cultural Roots",
+    lyricsSize: 13,
+    meta: "Tom: Cm  |  Ritmo: Reggae  |  BPM: ~90  |  Comp.: Cultural Roots",
+    cols: [
+      // COLUNA 1: Refrão + Verso + Bridge + Solo
+      [
+        { section: "Refrão" },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Oh, why can't we all "],["Bb","live as one?"]] },
+        { line: [["Cm","Oh, why can't we all "],["Bb","live as one?"]] },
+        { spacer: true },
+        { section: "Verso" },
+        { line: [["Cm","Any man, any man "],["Bb","resent some man"]] },
+        { line: [["Cm","Because of his colour, "],["Bb","race, or creed"]] },
+        { line: [["Cm","Oh, we should never"]] },
+        { line: [["Bb","be respected, no way"]] },
+        { line: [["Cm","'Cause if I jook out your eyes,"]] },
+        { line: [["Bb","you feel it"]] },
+        { line: [["Cm","If you jook out my eyes, "],["Bb","me see it"]] },
+        { line: [["Cm","If I cut you, I blood "],["Bb","come"]] },
+        { line: [["Cm","And if you cut I, I'm sure it's"]] },
+        { line: [["Bb","not water, come a-blood"]] },
+        { spacer: true },
+        { section: "Bridge" },
+        { line: [["Cm","Every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","Oh, inna earth "],["Bb","· "]] },
+        { spacer: true },
+        { section: "Solo — teclado", solo: true },
+      ],
+      // COLUNA 2: Verso 3 + Verso 3 + Bridge 3 + Refrão 2
+      [
+        { section: "Verso 3" },
+        { line: [["Cm","Any man, any man "],["Bb","resent some man"]] },
+        { line: [["Cm","Because of his colour, "],["Bb","race, or creed"]] },
+        { line: [["Cm","Oh, we should never"]] },
+        { line: [["Bb","be respected, no way"]] },
+        { line: [["Cm","'Cause if I jook out your eyes,"]] },
+        { line: [["Bb","you feel it"]] },
+        { line: [["Cm","If you jook out my eyes, "],["Bb","me see it"]] },
+        { line: [["Cm","If I cut you, I blood "],["Bb","come"]] },
+        { line: [["Cm","And if you cut I, I'm sure it's"]] },
+        { line: [["Bb","not water, come a-blood"]] },
+        { spacer: true },
+        { section: "Bridge 3" },
+        { line: [["Cm","Every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, a-blood"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","every man, every man, "],["Bb","Oh, inna earth"]] },
+        { line: [["Cm","Oh, inna earth "],["Bb","· "]] },
+        { spacer: true },
+        { section: "Refrão 2" },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","Every man has a right "],["Bb","to live on this land"]] },
+        { line: [["Cm","So why can't we all "],["Bb","live as one?"]] },
+        { line: [["Cm","Why can't we all "],["Bb","live as one?"]] },
+      ]
+    ]
+  },
+
+  // ── 15 ─────────────────────────────────────
+  {
+    id: "1865",
+    num: 15,
+    title: "1865 (96° In The Shade)",
+    artist: "Third World",
+    lyricsSize: 15,
+    meta: "Tom: Am  |  Ritmo: Reggae  |  BPM: 132  |  Comp.: Michael Cooper & Cat Coore",
+    cols: [
+      // COLUNA 1
+      [
+        { section: "Refrão" },
+        { line: [["C","96 "],["G","degrees"]] },
+        { line: [["Am","in the shade"]] },
+        { line: [["C","real "],["G","hot"]] },
+        { line: [["Am","in the shade"]] },
+        { spacer: true },
+        { section: "Verso 1" },
+        { line: [["","Said it was "],["Am","96 degrees in the "],["G","shade"]] },
+        { line: [["Am","Ten thousand soldiers on "],["G","parade"]] },
+        { line: [["Am","Taking I and I to meet a big fat "],["G","boy"]] },
+        { line: [["Am","Sent from overseas"]] },
+        { line: [["G","The queen employ"]] },
+        { spacer: true },
+        { line: [["Am","Excellency before you I come"]] },
+        { line: [["G","With my representation"]] },
+        { line: [["Am","You know where I'm coming "],["G","from"]] },
+        { spacer: true },
+        { line: [["Am","You caught me on the loose"]] },
+        { line: [["","Fighting to be free"]] },
+        { line: [["G","Now you show me a noose"]] },
+        { line: [["","On the cotton tree"]] },
+        { spacer: true },
+        { line: [["Am","Entertainment for you"]] },
+        { line: [["G","Martyrdom "],["E","for me"]] },
+      ],
+      // COLUNA 2
+      [
+        { section: "Refrão" },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Am","Some may suffer "],["G","and some may burn"]] },
+        { line: [["Am","But I know that one day "],["G","my people will learn"]] },
+        { line: [["Am","As sure as the sun shines "],["G","way up in the sky"]] },
+        { line: [["Am","Today I stand here a victim"]] },
+        { line: [["G","the truth is I'll never die"]] },
+        { spacer: true },
+        { section: "Refrão Final — repetir" },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+        { line: [["C","96 "],["G","degrees in the "],["Am","shade"]] },
+        { line: [["C","Real "],["G","hot in the "],["Am","shade"]] },
+      ]
+    ]
+  },
+
+  // ── 16 ─────────────────────────────────────
+  {
+    id: "pet-sematary",
+    num: 16,
+    title: "Pet Sematary",
+    artist: "Ramones",
+    lyricsSize: 13,
+    meta: "Tom: Dm  |  Ritmo: Punk Rock  |  BPM: ~128  |  Comp.: Dee Dee Ramone",
+    cols: [
+      // COLUNA 1: Verso 1 + Refrão 1 + Verso 2 + Refrão 2
+      [
+        { section: "Verso 1" },
+        { line: [["Dm","Under the arc of "],["C","a weather "],["F","stain boards,"]] },
+        { line: [["Dm","Ancient goblins, "],["C","and "],["F","warlords,"]] },
+        { line: [["Dm","Come out of the ground, "],["C","not making "],["F","a sound,"]] },
+        { line: [["Dm","The smell of death "],["C","is all "],["F","around,"]] },
+        { line: [["C","And the night when "],["Dm","the cold wind blows,"]] },
+        { line: [["C","No one cares, "],["Dm","nobody "],["Bb","knows."]] },
+        { spacer: true },
+        { section: "Refrão" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+        { spacer: true },
+        { section: "Verso 2" },
+        { line: [["Dm","Follow Victor to "],["C","the sacred "],["F","place,"]] },
+        { line: [["Dm","This ain't a dream, "],["C","I can't "],["F","escape,"]] },
+        { line: [["Dm","Molars and fangs, "],["C","the clicking "],["F","of bones,"]] },
+        { line: [["Dm","Spirits moaning "],["C","among the "],["F","tombstones,"]] },
+        { line: [["C","And the night, when "],["Dm","the moon is bright,"]] },
+        { line: [["C","Someone cries, "],["Dm","something "],["Bb","ain't right."]] },
+        { spacer: true },
+        { section: "Refrão 2" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+      ],
+      // COLUNA 2: Solo + Verso 3 + Refrão 3 + Outro
+      [
+        { section: "Solo — guitarra", solo: true },
+        { spacer: true },
+        { section: "Verso 3" },
+        { line: [["Dm","The moon is full, "],["C","the air "],["F","is still,"]] },
+        { line: [["Dm","All of a sudden "],["C","I feel "],["F","a chill,"]] },
+        { line: [["Dm","Victor is grinning, "],["C","flesh rotting "],["F","away,"]] },
+        { line: [["Dm","Skeletons dance, "],["C","I curse "],["F","this day,"]] },
+        { line: [["C","And the night when "],["Dm","the wolves cry out,"]] },
+        { line: [["C","Listen close and "],["Dm","you can hear "],["Bb","me shout."]] },
+        { spacer: true },
+        { section: "Refrão 3" },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again,"]] },
+        { line: [["Dm","I don't want to be buried "],["F","in a"]] },
+        { line: [["C","Pet "],["Bb","Sematary,"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","again."]] },
+        { spacer: true },
+        { section: "Outro" },
+        { line: [["Dm","oh, no "],["C","oh, no"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","not again,"]] },
+        { line: [["Dm","Oh, no "],["C","oooh"]] },
+        { line: [["Dm","I don't want to "],["C","live my "],["Bb","life "],["C","not again."]] },
+        { line: [["Dm","oh, no no no "],["F","(Fade out)"]] },
+      ]
+    ]
+  },
+
+];
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+
+function buildSidebar() {
+  const list = document.getElementById('song-list');
+  const drawer = document.getElementById('drawer-songs');
+  SONGS.forEach((song, i) => {
+    [list, drawer].forEach(container => {
+      const item = document.createElement('div');
+      item.className = 'song-item';
+      item.dataset.id = song.id;
+      item.innerHTML = `
+        <span class="song-num">${String(song.num || i+1).padStart(2,'0')}</span>
+        <div class="song-info">
+          <div class="song-name">${song.title}</div>
+          <div class="song-artist">${song.artist}</div>
+        </div>`;
+      item.addEventListener('click', () => loadSong(song.id));
+      container.appendChild(item);
+    });
+  });
+}
+
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.getElementById('mobile-drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.getElementById('mobile-drawer').classList.remove('open');
+}
+
+function buildBlock(block) {
+  if (block.section) {
+    const cls = block.solo ? ' solo' : '';
+    return `<div class="section${cls}">${block.section}</div>`;
+  }
+  if (block.spacer) {
+    return `<div class="spacer"></div>`;
+  }
+  if (block.line) {
+    const cls = block.paren ? ' paren' : '';
+    const segs = block.line.map(([ch, lw]) =>
+      `<span class="cg"><span class="ch">${ch}</span><span class="lw">${lw}</span></span>`
+    ).join('');
+    return `<div class="line${cls}">${segs}</div>`;
+  }
+  return '';
+}
+
+function buildSheet(song) {
+  const lw = song.lyricsSize || 14;
+  const ch = Math.round(lw * 0.79);
+  const chMin = Math.round(lw * 1.15);
+  const lineGap = lw >= 15 ? 5 : 6;
+  const pageStyle = `--lw-size:${lw}px;--ch-size:${ch}px;--ch-min:${chMin}px;--line-gap:${lineGap}px`;
+
+  // fluxo único: col1 seguido de col2 (mesma ordem de leitura), colunas geradas via CSS
+  const flow = [...song.cols[0], ...song.cols[1]].map(buildBlock).join('\n');
+
+  return `
+    <div class="page" style="${pageStyle}">
+      <div class="song-head">
+        <div>
+          <div class="song-title">${song.title}</div>
+          <div class="song-artist-h">${song.artist}</div>
+          <div class="song-meta">${song.meta}</div>
+        </div>
+        <button class="btn-pdf-inline" onclick="window.print()">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 1h8v4H4zM2 5h12v7H2zM5 12v3h6v-3"/>
+            <circle cx="12" cy="8" r="0.8" fill="currentColor" stroke="none"/>
+          </svg>
+          Baixar PDF
+        </button>
+      </div>
+      <hr class="divider">
+      <div class="sheet-flow">${flow}</div>
+    </div>`;
+}
+
+// ── AUTO-FIT: escala a fonte de cada música para preencher a tela ──
+let CURRENT_ID = null;
+
+function applySizes(pageEl, lw) {
+  const ch    = Math.round(lw * 0.79 * 10) / 10;
+  const chMin = Math.round(lw * 1.15 * 10) / 10;
+  const gap   = Math.max(3, Math.round(lw * 0.42 * 10) / 10);
+  pageEl.style.setProperty('--lw-size', lw + 'px');
+  pageEl.style.setProperty('--ch-size', ch + 'px');
+  pageEl.style.setProperty('--ch-min', chMin + 'px');
+  pageEl.style.setProperty('--line-gap', gap + 'px');
+}
+
+const FIT_MIN = 12;    // piso de legibilidade (mesmo que sobre scroll nas longas)
+const FIT_MAX = 25;    // teto para não ficar exagerado
+const COL_SWITCH = 0.8; // só troca pra mais colunas se ganhar +0.8px de fonte
+
+// calcula a maior fonte possível para um dado nº de colunas
+function fitForCols(page, flow, area, nCols) {
+  flow.style.columnCount = nCols;
+
+  // limite por LARGURA (nenhuma linha pode estourar a coluna)
+  applySizes(page, 16);
+  const fcs = getComputedStyle(flow);
+  const gapPx = parseFloat(fcs.columnGap) || 0;
+  const colW = (flow.clientWidth - gapPx * (nCols - 1)) / nCols;
+  let maxLine = 0;
+  flow.querySelectorAll('.line').forEach(l => { maxLine = Math.max(maxLine, l.scrollWidth); });
+  const sizeW = maxLine > 0 ? 16 * (colW / maxLine) * 0.98 : FIT_MAX;
+
+  // limite por ALTURA (a página cabe na tela)
+  const cs = getComputedStyle(area);
+  const padV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+  const target = area.clientHeight - padV - 6;
+  let lo = 9, hi = 28, sizeH = 9;
+  for (let i = 0; i < 13; i++) {
+    const mid = (lo + hi) / 2;
+    applySizes(page, mid);
+    if (page.getBoundingClientRect().height <= target) { sizeH = mid; lo = mid; }
+    else { hi = mid; }
+  }
+
+  const size = Math.max(FIT_MIN, Math.min(FIT_MAX, Math.min(sizeW, sizeH)));
+  return size;
+}
+
+function fitSong() {
+  const area = document.getElementById('sheet-area');
+  const page = area.querySelector('.page');
+  const flow = page && page.querySelector('.sheet-flow');
+  if (!page || !flow) return;
+  const song = SONGS.find(s => s.id === CURRENT_ID);
+
+  // mobile: 1 coluna, scroll natural, sem fit vertical
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    flow.style.columnCount = 1;
+    applySizes(page, (song && song.lyricsSize) || 14);
+    return;
+  }
+
+  // candidatos de nº de colunas conforme largura da tela
+  const w = window.innerWidth;
+  const candidates = w > 1100 ? [3, 4] : [2, 3];
+
+  // escolhe o nº de colunas que dá a MAIOR fonte (base = 1º candidato)
+  let bestN = candidates[0];
+  let bestSize = fitForCols(page, flow, area, bestN);
+  for (let i = 1; i < candidates.length; i++) {
+    const s = fitForCols(page, flow, area, candidates[i]);
+    if (s > bestSize + COL_SWITCH) { bestSize = s; bestN = candidates[i]; }
+  }
+
+  // aplica o vencedor
+  fitForCols(page, flow, area, bestN);
+  flow.style.columnCount = bestN;
+  applySizes(page, Math.round(bestSize * 10) / 10);
+}
+
+function loadSong(id) {
+  closeDrawer();
+  const song = SONGS.find(s => s.id === id);
+  if (!song) return;
+  CURRENT_ID = id;
+
+  // sidebar highlight
+  document.querySelectorAll('.song-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.song-item[data-id="${id}"]`).classList.add('active');
+
+  // sheet
+  const content = document.getElementById('sheet-content');
+  content.innerHTML = buildSheet(song);
+  content.style.display = 'block';
+  document.getElementById('empty-state').style.display = 'none';
+
+  // scroll to top + auto-fit
+  document.getElementById('sheet-area').scrollTop = 0;
+  requestAnimationFrame(fitSong);
+}
+
+// re-ajusta ao redimensionar a janela
+let _resizeT;
+window.addEventListener('resize', () => {
+  clearTimeout(_resizeT);
+  _resizeT = setTimeout(() => { if (CURRENT_ID) fitSong(); }, 150);
+});
+
+// init
+buildSidebar();
+
+// auto-load first song
+if (SONGS.length > 0) loadSong(SONGS[0].id);
+</script>
+</body>
+</html>
